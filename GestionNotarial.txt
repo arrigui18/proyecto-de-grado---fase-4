@@ -1,0 +1,88 @@
+
+-- Crear la Base de Datos
+
+CREATE DATABASE GestionNotarial;
+GO
+
+USE GestionNotarial;
+GO
+
+
+--Crear las Tablas
+
+-- Tabla Documentos
+CREATE TABLE Documentos (
+    ID_Documento INT IDENTITY(1,1) PRIMARY KEY,
+    Titulo NVARCHAR(255) NOT NULL,
+    TipoDocumento NVARCHAR(100) NOT NULL,
+    UbicacionDigital NVARCHAR(255) NOT NULL,
+    Estado NVARCHAR(50) DEFAULT 'Activo',
+    FechaRegistro DATETIME DEFAULT GETDATE()
+);
+
+-- Tabla Metadatos
+CREATE TABLE Metadatos (
+    ID_Metadato INT IDENTITY(1,1) PRIMARY KEY,
+    ID_Documento INT NOT NULL FOREIGN KEY REFERENCES Documentos(ID_Documento),
+    Propietario NVARCHAR(255) NOT NULL,
+    Notas NVARCHAR(MAX),
+    FechaActualizacion DATETIME DEFAULT GETDATE()
+);
+
+-- Tabla Usuarios
+CREATE TABLE Usuarios (
+    ID_Usuario INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(255) NOT NULL,
+    Rol NVARCHAR(50) NOT NULL, -- Administrador, Notario, Empleado
+    Email NVARCHAR(255) NOT NULL UNIQUE
+);
+
+-- Tabla Logs
+CREATE TABLE Logs (
+    ID_Log INT IDENTITY(1,1) PRIMARY KEY,
+    Usuario NVARCHAR(255),
+    Accion NVARCHAR(255),
+    Fecha DATETIME DEFAULT GETDATE()
+);
+
+
+-- Crear los Roles
+
+CREATE ROLE Notario;
+CREATE ROLE Empleado;
+CREATE ROLE Administrador;
+
+
+-- Asignar Permisos a los Roles
+
+-- Permisos para Notarios
+GRANT SELECT, INSERT ON Documentos TO Notario;
+GRANT SELECT ON Metadatos TO Notario;
+GRANT SELECT ON Logs TO Notario;
+
+-- Permisos para Empleados
+GRANT SELECT ON Documentos TO Empleado;
+
+-- Permisos para Administradores
+GRANT SELECT, INSERT, UPDATE, DELETE ON Documentos TO Administrador;
+GRANT SELECT, INSERT, UPDATE, DELETE ON Metadatos TO Administrador;
+GRANT SELECT, INSERT, UPDATE, DELETE ON Usuarios TO Administrador;
+GRANT SELECT, INSERT, UPDATE, DELETE ON Logs TO Administrador;
+
+
+-- 5. Crear los Usuarios SQL
+
+-- Crear usuarios en el servidor
+CREATE LOGIN UsuarioNotario1 WITH PASSWORD = 'ContraseñaSegura123';
+CREATE LOGIN UsuarioEmpleado1 WITH PASSWORD = 'ContraseñaSegura456';
+CREATE LOGIN UsuarioAdmin1 WITH PASSWORD = 'ContraseñaSegura789';
+
+-- Crear usuarios en la base de datos
+CREATE USER UsuarioNotario1 FOR LOGIN UsuarioNotario;
+CREATE USER UsuarioEmpleado1 FOR LOGIN UsuarioEmpleado;
+CREATE USER UsuarioAdmin1 FOR LOGIN UsuarioAdmin;
+
+-- Asignar roles a usuarios
+EXEC sp_addrolemember 'Notario', 'UsuarioNotario1';
+EXEC sp_addrolemember 'Empleado', 'UsuarioEmpleado1';
+EXEC sp_addrolemember 'Administrador', 'UsuarioAdmin1';
